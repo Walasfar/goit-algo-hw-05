@@ -14,17 +14,18 @@ def read_error(func) :
             print(f"File not found. Please enter path to log-file. Error: {e}")
             
         except ValueError as e:
-            return "The log entry is damaged."
+            return f"The log entry {e} is damaged."
             
     return inner
 
 @read_error
 def parse_log_line(line: str) -> dict :
-    pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (DEBUG|ERROR|INFO) .+")
+    pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (DEBUG|ERROR|INFO|WARNING) .+")
     if pattern.match(line):
         info = line.split()
         date, time, log, *msg = info
         entry = {'date': date, 'time': time, 'level': log, 'message': ' '.join(msg)}
+        return entry
     else:
         raise ValueError
 
@@ -69,18 +70,25 @@ def count_logs_by_level(logs: list) -> dict :
     return counter_dict
 
 
-def display_log_counts(counts: dict) :
+def display_log_counts(counts: dict, level=False) :
     result = ""
     string = "Рівень логування"
     print(f"{string.ljust(18)}| Кількість")
     print('-' * 29)
     for key, value in counts.items():
         result += f"{key.ljust(18)}| {value}\n"
+    if level:
+        result += f"Деталі логів для рівня '{level}':\n"
+        for entry in filter_logs_by_level(logs, level):
+            result += f"{entry['date']} {entry[time]} - {entry['message']}"
     return result
+
 
 msg = "2024-01-22 11:30:15 "
 
 logs = load_logs("dz-3.log")
 
-for log in logs:
-    print(log)
+out_log = count_logs_by_level(logs)
+
+display_log_counts(out_log)
+
