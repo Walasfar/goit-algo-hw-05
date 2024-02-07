@@ -1,4 +1,4 @@
-def changing_fibonacci():
+def caching_fibonacci():
     # Save result here
     cache = {}
     
@@ -14,3 +14,9 @@ def changing_fibonacci():
             return cache[n]
         
     return fibonacci
+
+
+fib = caching_fibonacci()
+
+print(fib(10))
+print(fib(15))
