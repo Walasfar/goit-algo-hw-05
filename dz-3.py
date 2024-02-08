@@ -13,12 +13,13 @@ def read_error(func):
             return {'level': 'DAMAGED','msg': e}
         
         except KeyError as e:
-            return e
+            return "Damaged entries."
             
     return inner
 
 @read_error
 def parse_log_line(line: str) -> dict:
+    # Правильна запис логу
     pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (INFO|ERROR|DEBUG|WARNING) .+")
     # Якщо запис логу правильна
     if pattern.match(line):
@@ -54,10 +55,59 @@ def filter_logs_by_level(logs: list, level: str) -> list:
         
     return filtered_logs
 
+def count_logs_by_level(logs: list) -> dict:
+    log_by_level = {}
 
-log_file = load_logs('dz-3.log')
+    for log in logs:
+        
+        if log['level'] in log_by_level:
+            log_by_level[log['level']] += 1
+        else:
+            log_by_level[log['level']] = 1
+            
+    return log_by_level
 
-filtered_logs = filter_logs_by_level(log_file, 'DAMAGED')
+def display_log_counts(counts: dict):
+    
+    level_title = "Рівень логування |"
+    count_title = 'Кількість'
+    result = ""
+    # Чорна магія з виводом таблички =)
+    print(f"{level_title} {count_title}")
+    print("-" * (len(level_title) - 2), "|", "-" * len(count_title))
+    # Вивід рівнів логу
+    for level, count in counts.items():
+        result += f"{level.ljust((len(level_title) - 1))}| {count}\n"
+        
+    return result
 
-for log in filtered_logs:
-    print(log)
+@read_error
+def print_details_log(log_file, level):
+    result = f"Деталі логів для рівня '{level.upper()}':\n"
+    for log in log_file:
+        result += f"{log['date']} {log['time']} - {log['msg']}\n"
+        
+    return result
+
+
+if __name__ == '__main__':
+    
+    arguments = len(sys.argv)
+    
+    if arguments >= 2:
+        
+        log_file = load_logs(str(sys.argv[1]))
+        result = display_log_counts(count_logs_by_level(log_file))
+        
+        match arguments:
+            
+            case 2:
+                print(result)
+                
+            case 3:
+                print(result)
+                entry_detal = filter_logs_by_level(log_file, sys.argv[2].upper())
+                print(print_details_log(entry_detal, sys.argv[2]))
+    else:
+        print("|You must provide argument-path.| Path to log-file. |")
+
