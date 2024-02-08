@@ -1,94 +1,63 @@
-# TODO
+import sys
+import re
 
-import sys, collections, re
-from datetime import datetime
-
-
-def read_error(func) :
-    def inner(*args, **kwargs) :
-        
+def read_error(func):
+    def inner(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         
         except FileNotFoundError as e:
-            print(f"File not found. Please enter path to log-file. Error: {e}")
-            
+            print("Log file not found.")
+        # Пошкоджена запис
         except ValueError as e:
-            return f"The log entry {e} is damaged."
+            return {'level': 'DAMAGED','msg': e}
+        
+        except KeyError as e:
+            return e
             
     return inner
 
 @read_error
-def parse_log_line(line: str) -> dict :
-    pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (DEBUG|ERROR|INFO|WARNING) .+")
+def parse_log_line(line: str) -> dict:
+    pattern = re.compile(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (INFO|ERROR|DEBUG|WARNING) .+")
+    # Якщо запис логу правильна
     if pattern.match(line):
-        info = line.split()
-        date, time, log, *msg = info
-        entry = {'date': date, 'time': time, 'level': log, 'message': ' '.join(msg)}
+        splited_line = line.split()
+        date, time, level, *msg = splited_line
+        entry = {'date': date, 'time': time, 'level': level, 'msg': ' '.join(msg)}
         return entry
+    # Інакше створиться запис з повідомленням про пошкоджену запис
     else:
-        raise ValueError
+        raise ValueError("The log entry is damaged.")
 
 
 @read_error
-def load_logs(file_path: str) -> list :
-    
-    result = []
-    with open(file_path, 'r', encoding='UTF-8') as file:
+def load_logs(file_path: str) -> list:
+    entry_list = []
+    with open(file_path, 'r', encoding='utf-8') as file:
         
         while True:
             line = file.readline()
             if not line:
                 break
             
-            result.append(parse_log_line(line))
-            
-    return result
+            entry_list.append(parse_log_line(line))
+    return entry_list
 
-def filter_logs_by_level(logs: list, level: str) -> list :
-    
+@read_error
+def filter_logs_by_level(logs: list, level: str) -> list:
     filtered_logs = []
     
-    for log in logs:
-        if log['level'] == level:
-            filtered_logs.append(log)
-            
+    for entry in logs:
+        if entry['level'] == level:
+            filtered_logs.append(entry)
+        
     return filtered_logs
 
 
-def count_logs_by_level(logs: list) -> dict :
-    
-    counter_dict = {}
-    
-    for log in logs:
-        level = log['level']
-        if not(level in counter_dict):
-            counter_dict[level] = 1
-        else:
-            counter_dict[level] += 1
-            
-    return counter_dict
+log_file = load_logs('dz-3.log')
 
+filtered_logs = filter_logs_by_level(log_file, 'DAMAGED')
 
-def display_log_counts(counts: dict, level=False) :
-    result = ""
-    string = "Рівень логування"
-    print(f"{string.ljust(18)}| Кількість")
-    print('-' * 29)
-    for key, value in counts.items():
-        result += f"{key.ljust(18)}| {value}\n"
-    if level:
-        result += f"Деталі логів для рівня '{level}':\n"
-        for entry in filter_logs_by_level(logs, level):
-            result += f"{entry['date']} {entry[time]} - {entry['message']}"
-    return result
-
-
-msg = "2024-01-22 11:30:15 "
-
-logs = load_logs("dz-3.log")
-
-out_log = count_logs_by_level(logs)
-
-display_log_counts(out_log)
-
+for log in filtered_logs:
+    print(log)
