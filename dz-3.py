@@ -1,5 +1,6 @@
 import sys
 import re
+from collections import Counter
 
 def read_error(func):
     def inner(*args, **kwargs):
@@ -47,25 +48,23 @@ def load_logs(file_path: str) -> list:
 
 @read_error
 def filter_logs_by_level(logs: list, level: str) -> list:
-    filtered_logs = []
-    
-    for entry in logs:
-        if entry['level'] == level:
-            filtered_logs.append(entry)
-        
-    return filtered_logs
+    # Використав lambda та filter. Наскільки менше коду!
+    choice_entry = lambda entry: entry['level'] == level
+    return list(filter(choice_entry, logs))
 
 def count_logs_by_level(logs: list) -> dict:
-    log_by_level = {}
+    # Використав модуль collections для спрощення коду
+    return dict(Counter(log['level'] for log in logs))
+    # log_by_level = {}
 
-    for log in logs:
+    # for log in logs:
         
-        if log['level'] in log_by_level:
-            log_by_level[log['level']] += 1
-        else:
-            log_by_level[log['level']] = 1
-            
-    return log_by_level
+    #     if log['level'] in log_by_level:  
+    #         log_by_level[log['level']] += 1
+    #     else:
+    #         log_by_level[log['level']] = 1
+    # return log_by_level
+
 
 def display_log_counts(counts: dict):
     
